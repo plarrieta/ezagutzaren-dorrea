@@ -393,7 +393,7 @@ body{background:#080f22;color:#eaf6ff}
 /* Beste unitateetara igarotzean 1. solairua ez nabarmendu, dagokionean izan ezik. */
 .track b:first-child:not(.active):not(.passed){background:#ddd;color:#182337;border-color:#67758a;box-shadow:none}
 
-.ezd-player{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;text-align:left;border:3px solid #29252c;border-radius:14px;background:#e9f7ff;padding:13px;margin:10px auto;max-width:510px}
+.ezd-player{display:grid;grid-template-columns:1fr;gap:6px 12px;text-align:left;border:3px solid #29252c;border-radius:14px;background:#e9f7ff;padding:13px;margin:10px auto;max-width:510px}
 .ezd-player label{font-size:12px;font-weight:900}.ezd-player input{font:inherit;font-size:17px;font-weight:800;border:2px solid #29252c;border-radius:9px;padding:8px;min-width:0}
 .ezd-player-help,.ezd-player-warning{grid-column:1/-1;font-size:12px!important;margin:4px 0!important}.ezd-player-warning{color:#a32222;font-weight:900}.ezd-player-help{color:#334e65}
 
@@ -417,11 +417,9 @@ body{background:#080f22;color:#eaf6ff}
   </details>
  </div><p class="ezd-unit-note" id="ezdUnitNote" aria-live="polite"></p>
  <section class="ezd-player" aria-label="Jokalariaren identifikazioa">
-  <label for="ezdPlayerCode">IKASLE-KODEA</label><input id="ezdPlayerCode" maxlength="40" autocomplete="off" spellcheck="false" placeholder="Adib.: IK001" value="">
-  <label for="ezdPlayerNick">EZIZENA</label><input id="ezdPlayerNick" maxlength="32" autocomplete="off" spellcheck="false" placeholder="Zure ezizena" value="">
-  <label for="ezdPlayerSecret">SARBIDE-GAKOA</label><input id="ezdPlayerSecret" type="password" maxlength="64" autocomplete="off" spellcheck="false" placeholder="Irakasleak emandako sarbide-gakoa" value="">
+  <label for="ezdPlayerNick">IZENA EDO EZIZENA</label><input id="ezdPlayerNick" maxlength="32" autocomplete="off" spellcheck="false" placeholder="Zure ezizena" value="">
   <p id="ezdPlayerWarning" class="ezd-player-warning" role="alert" hidden></p>
-  <p class="ezd-player-help">Sartu irakasleak emandako ikasle-kodea, ezizena eta sarbide-gakoa. Gakoa ez da nabigatzailean gordeko.</p>
+  <p class="ezd-player-help">Zuk aukeratutako izena edo ezizena idatzi. Izen bera erabiltzen dutenen emaitzak sailkapenean batera ager daitezke.</p>
 </section>
 <button class="launch-btn" id="launchBtn" type="button">▶ HASI PARTIDA BERRIA</button>
  <button class="launch-btn" id="continueBtn" type="button" hidden style="margin-top:10px;background:#e8fff2;color:#21513b">↪ JARRAITU AURREKO PARTIDA</button>
@@ -805,7 +803,7 @@ function arcadeVictoryScreen(){
       <h2 id="dvTitle">EZAGUTZAREN DORREA<br><span>GAINDITUTA!</span></h2>
       <div class="dv-subtitle">Zorionak! ARGIk zortzi solairuak gainditu ditu.</div>
       <div class="dv-score"><small>GUZTIRA · ARCADE-PUNTUAK</small><strong>${score} ★</strong></div>
-      <p>Partida gailuan gordeta. Emaitza bidaltzeko, hasieran sartutako sarbide-gakoa erabiliko da.</p>
+      <p>Partida gailuan gordeta. Emaitza zure izenarekin edo ezizenarekin bidal dezakezu.</p>
       <div class="dv-send-panel" style="margin:12px auto 10px;max-width:360px;text-align:center">
         <button type="button" id="dvSend" style="display:block;width:100%;padding:13px 12px;border:3px solid #152842;border-radius:8px;background:#ffe27a;color:#10213f;font:900 14px system-ui;cursor:pointer">⇧ EMAITZA BIDALI</button>
         <p id="dvSendStatus" role="status" aria-live="polite" style="font-size:12px;line-height:1.6;margin:9px 0 0;color:#dcecff">Emaitza ez da oraindik bidali.</p><a id="dvCheckSheet" href="#" style="display:none;margin-top:8px;padding:9px 10px;background:#9fe5e2;color:#11263a;border-radius:7px;font:800 12px system-ui;text-decoration:none">Ezin bada egiaztatu, jakinarazi irakasleari partida-IDa.</a>
@@ -813,9 +811,7 @@ function arcadeVictoryScreen(){
       <div class="dv-actions"><button type="button" id="dvClose">IKUSI DORREA</button><button type="button" id="dvAgain">↻ BERRIRO HASI</button></div>
     </div>`;
   modal.classList.add('is-visible');
-  // Hasieran idatzitako gakoa ez utzi ikusgai.
-  if(typeof window.EZD_captureSessionSecret==='function')window.EZD_captureSessionSecret();
-  if(typeof window.EZD_appendVictoryResult==='function') window.EZD_appendVictoryResult();
+   if(typeof window.EZD_appendVictoryResult==='function')window.EZD_appendVictoryResult();
   // Botoia garaipen-modalaren barruan sortzen da, ez kanpoko panelaren arabera.
   const sendButton=document.getElementById('dvSend');
   const sendStatus=document.getElementById('dvSendStatus');
@@ -859,19 +855,12 @@ function arcadeVictoryScreen(){
   sendButton.onclick=async()=>{
     const cfg=window.EZD_EMAITZAK_KONFIG;
     const unitCode=localStorage.getItem('ezd-unit-selected')==='MA06'?'MA06':'FK06';
-    let player=null;
-    try{player=JSON.parse(localStorage.getItem('ezd-identitatea-proba--'+unitCode)||'null')}catch(e){}
-    if(!player){
-      const id=document.getElementById('ezdPlayerCode');
-      player={ikasleId:id?.value?.trim()?.toUpperCase()||''};
-    }
-    if(!cfg?.gaituta||!cfg.webAppUrl){sendStatus.textContent='Konexioa ez dago aktibatuta. Egiaztatu konexioa-ezarpenak.js fitxategia.';return;}
+         let player=null;
+     try{player=JSON.parse(localStorage.getItem('ezd-identitatea-proba--'+unitCode)||'null')}catch(e){}
+     const ezizena=String(player?.ezizena||document.getElementById('ezdPlayerNick')?.value||'').trim();
+     if(ezizena.length<2||ezizena.length>32){sendStatus.textContent='Izena edo ezizena falta da.';return;}
+if(!cfg?.gaituta||!cfg.webAppUrl){sendStatus.textContent='Konexioa ez dago aktibatuta. Egiaztatu konexioa-ezarpenak.js fitxategia.';return;}
     
-    const sarbideGakoa=(window.EZD_getSessionSecret?.()||'').trim();
-    if(!/^[A-Fa-f0-9]{16}$/.test(sarbideGakoa)){
-      sendStatus.textContent='Ez dago hasierako sarbide-gakorik saio honetan. Sakatu IKUSI DORREA, sartu gakoa hasierako identifikazioan eta ireki berriro amaierako leihoa.';
-      return;
-    }
     if(!cfg.unitateak.includes(unitCode)){sendStatus.textContent='Unitatea ez dago emaitzen konexioan gaituta.';return;}
     const pendingKey='ezd-pending-bidalketa--'+unitCode;
     let uniqueId=sessionStorage.getItem(pendingKey);
@@ -881,7 +870,7 @@ function arcadeVictoryScreen(){
     }
     // Partida aktiboan emandako denborak bakarrik; geldialdiak ez dira batzen.
     const denborak=EZD_azkenDenborak();
-    const payload={ikasleId:player.ikasleId,sarbideGakoa,unitatea:unitCode,
+    const payload={ezizena,unitatea:unitCode,
       puntuak:Math.max(0,Math.round(Number(A.score)||0)),
       iraupena:denborak.iraupena,arcadeDenbora:denborak.arcadeDenbora,
       erronkenDenbora:denborak.erronkenDenbora,partidaId:uniqueId};
@@ -898,7 +887,7 @@ function arcadeVictoryScreen(){
         sendButton.disabled=true;
         checkSheet.style.display='none';
       } else {
-        sendStatus.textContent='ESKAERA BIDALIA, BAINA EZIN IZAN DA GORDETZEA BAIEZTATU. Egiaztatu PARTIDAK (ID: '+uniqueId+'). Baliteke gakoa edo puntuazioa baztertuta egotea.';
+        sendStatus.textContent='ESKAERA BIDALIA, BAINA EZIN IZAN DA GORDETZEA BAIEZTATU. Egiaztatu PARTIDAK (ID: '+uniqueId+'). Baliteke izena edo puntuazioa baztertuta egotea.';
         checkSheet.style.display='block';
         sendButton.textContent='↻ BERRIZ SAIATU (ID BERA)';
         sendButton.disabled=false;
@@ -1378,63 +1367,52 @@ setInterval(arcadeUpdateTimer,200);
 })();
 </script>
 
-<script src="konexioa-ezarpenak.js"></script>
 <script>
-/* Identifikazioa eta tokiko emaitzen historia; zerbitzarirako bidalketa amaierako botoian. */
-(()=>{
- const $=id=>document.getElementById(id);
- const code=$('ezdPlayerCode'),nick=$('ezdPlayerNick'),warning=$('ezdPlayerWarning');
- const secretField=$('ezdPlayerSecret');
- // Gakoa saioaren RAM memorian bakarrik; ez localStorage/sessionStorage-n.
- let secretInMemory='';
- const captureSecret=()=>{secretInMemory=String(secretField?.value||'').trim();};
- secretField?.addEventListener('input',captureSecret);
- window.EZD_getSessionSecret=()=>secretInMemory;
- window.EZD_captureSessionSecret=()=>{if(secretField?.value){captureSecret();secretField.value='';}};
- const unit=()=>localStorage.getItem('ezd-unit-selected')==='MA06'?'MA06':'FK06';
- const identityKey=u=>'ezd-identitatea-proba--'+u;
- const resultsKey='ezd-emaitzak-proba-v1';
- const startKey=u=>'ezd-hasierako-ordua--'+u;
- const text=v=>String(v||'').trim();
- function validate(){
-   const id=text(code.value).toUpperCase(), alias=text(nick.value);
-   let error='';
-   if(!/^[A-Z0-9_-]{3,40}$/.test(id))error='Ikasle-kodeak 3-40 karakter izan behar ditu (letrak, zenbakiak, _ edo -).';
-   else if(alias.length<2||alias.length>32)error='Ezizenak 2-32 karakter izan behar ditu.';
-   else if(!/^[0-9A-Fa-f]{16}$/.test(String(secretField?.value||'').trim()))error='Sarbide-gakoak 16 karaktere hexadezimal izan behar ditu (irakasleak emandako gakoa).';
-   warning.textContent=error; warning.hidden=!error;
-   return error?null:{ikasleId:id,ezizena:alias};
- }
- function loadIdentity(){
-   try{const p=JSON.parse(localStorage.getItem(identityKey(unit()))||'null');if(p){code.value=p.ikasleId||'';nick.value=p.ezizena||'';}}catch(e){}
- }
- document.querySelectorAll('[data-ezd-unit]').forEach(btn=>btn.addEventListener('click',()=>setTimeout(loadIdentity,0)));
- loadIdentity();
- function startGuard(e){
-   const player=validate();
-   if(!player){e.preventDefault();e.stopImmediatePropagation();(secretField?.value?code:secretField)?.focus();return;}
-   captureSecret();
-   // Sarrera-eremuan ez utzi gakoa jokoak aurrera egin ondoren.
-   if(secretField)secretField.value='';
-   localStorage.setItem(identityKey(unit()),JSON.stringify(player));
-   // Hasiera-ordua newRace() barruan ezarriko da, resetaren ondoren.
- }
- $('launchBtn').addEventListener('click',startGuard,true);
- $('continueBtn').addEventListener('click',startGuard,true);
- function appendResult(){
-   const u=unit();
-   let player;try{player=JSON.parse(localStorage.getItem(identityKey(u))||'null');}catch(e){}
-   if(!player?.ikasleId)return;
-   const finalPoints=Math.max(0,Math.round(Number(A.score)||0));
-   let history=[];try{history=JSON.parse(localStorage.getItem(resultsKey)||'[]');if(!Array.isArray(history))history=[];}catch(e){}
-   const raceId='race-'+u+'-'+Date.now()+'-'+Math.random().toString(36).slice(2,10);
-   history.push({partidaId:raceId,ikasleId:player.ikasleId,ezizena:player.ezizena,unitatea:u,puntuak:finalPoints,data:new Date().toISOString()});
-   localStorage.setItem(resultsKey,JSON.stringify(history));
-   const best=history.filter(r=>r.ikasleId===player.ikasleId&&r.unitatea===u).reduce((m,r)=>Math.max(m,Number(r.puntuak)||0),0);
-   // Emaitza tokiko historian gordeta; modalak botoi bakarra dauka.
-
- }
- window.EZD_appendVictoryResult=appendResult;
-})();
+window.EZD_EMAITZAK_KONFIG=Object.freeze({
+ gaituta:true,
+ webAppUrl:"https://script.google.com/macros/s/AKfycbxOa1zt2GyukDSSNIwMM6vIz81I6R3xeMP8ZE_PeulHXAzViiFmAlRaR0YltjXs7yN2/exec",
+ unitateak:["MA06","FK06"]
+});
+</script>
+<script>
+ /* Izen edo ezizen bakarra. Irakasleak berak identifikatuko ditu partidak. */
+ (()=>{
+  const $=id=>document.getElementById(id);
+  const nick=$('ezdPlayerNick'), warning=$('ezdPlayerWarning');
+  const unit=()=>localStorage.getItem('ezd-unit-selected')==='MA06'?'MA06':'FK06';
+  const identityKey=u=>'ezd-identitatea-proba--'+u;
+  const resultsKey='ezd-emaitzak-proba-v1';
+  function validate(){
+    const alias=String(nick.value||'').trim();
+    const ok=alias.length>=2 && alias.length<=32 && !/^[=+@-]/.test(alias) && !/[\x00-\x1f\x7f<>]/.test(alias);
+    warning.textContent=ok?'':'Idatzi 2-32 karaktereko izena edo ezizena (ez erabili =, +, - edo @ hasieran).';
+    warning.hidden=ok;
+    return ok?{ikasleId:alias,ezizena:alias}:null;
+  }
+  function loadIdentity(){
+    try{const p=JSON.parse(localStorage.getItem(identityKey(unit()))||'null');if(p)nick.value=p.ezizena||'';}catch(e){}
+  }
+  document.querySelectorAll('[data-ezd-unit]').forEach(btn=>btn.addEventListener('click',()=>setTimeout(loadIdentity,0)));
+  loadIdentity();
+  function startGuard(e){
+    const player=validate();
+    if(!player){e.preventDefault();e.stopImmediatePropagation();nick.focus();return;}
+    localStorage.setItem(identityKey(unit()),JSON.stringify(player));
+  }
+  $('launchBtn').addEventListener('click',startGuard,true);
+  $('continueBtn').addEventListener('click',startGuard,true);
+  function appendResult(){
+    const u=unit();let player;
+    try{player=JSON.parse(localStorage.getItem(identityKey(u))||'null')}catch(e){}
+    if(!player?.ezizena)return;
+    const finalPoints=Math.max(0,Math.round(Number(A.score)||0));
+    let history=[];
+    try{history=JSON.parse(localStorage.getItem(resultsKey)||'[]');if(!Array.isArray(history))history=[];}catch(e){}
+    const raceId='race-'+u+'-'+Date.now()+'-'+Math.random().toString(36).slice(2,10);
+    history.push({partidaId:raceId,ikasleId:player.ezizena,ezizena:player.ezizena,unitatea:u,puntuak:finalPoints,data:new Date().toISOString()});
+    localStorage.setItem(resultsKey,JSON.stringify(history));
+  }
+  window.EZD_appendVictoryResult=appendResult;
+ })();
 </script>
 </body></html>
