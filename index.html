@@ -398,6 +398,18 @@ body{background:#080f22;color:#eaf6ff}
 .ezd-player-help,.ezd-player-warning{grid-column:1/-1;font-size:12px!important;margin:4px 0!important}.ezd-player-warning{color:#a32222;font-weight:900}.ezd-player-help{color:#334e65}
 
 @media(max-width:540px){.ezd-player{grid-template-columns:1fr}}
+
+/* Aukeratutako unitatearen nabarmentzea eta beheko errepikapena kentzea. */
+.ezd-landscape .ezd-unit[aria-pressed="true"],
+.ezd-landscape .ezd-unit.ezd-unit-selected {
+ background:#ffe67a !important;
+ color:#172537 !important;
+ border:3px solid #ffb82e !important;
+ box-shadow:0 0 0 2px rgba(255,230,122,.28), inset 0 0 0 1px #172537 !important;
+ font-weight:900;
+}
+.ezd-landscape #ezdUnitNote {display:none !important;}
+.ezd-landscape .ezd-launch-footer {row-gap:8px;}
 </style><style id="ezd-ranking-style">
 #ezdRankingOpen{border:2px solid #29252c;background:#ffe67a;border-radius:10px;padding:7px 10px;font-weight:900;cursor:pointer}
 #ezdRankingOverlay[hidden]{display:none!important}#ezdRankingOverlay{position:fixed;inset:0;z-index:2500;background:#142639ba;display:grid;place-items:center;padding:15px}
@@ -1669,13 +1681,27 @@ window.EZD_EMAITZAK_KONFIG=Object.freeze({
      event.preventDefault();show(d);
    });
  });
- const active=document.querySelector('.ezd-unit[aria-pressed="true"]');
+ // Mantendu benetan gordetako unitatearen arloa, orria birkargatzean ere.
+ const stored=(localStorage.getItem('ezd-unit-selected')||'FK06').toUpperCase();
+ const selectedButton=root.querySelector('[data-ezd-unit="'+stored+'"]');
  let init=details[0];
- if(active){for(const [d,list] of lists){if(list&&list.contains(active)){init=d;break}}}
+ if(selectedButton){
+   for(const [subject,list] of lists){
+     if(list&&list.contains(selectedButton)){init=subject;break;}
+   }
+ }
  show(init);
- // Aukeratutako unitatearen informazioaren aurreko zenbakia ez da ikusgai egongo.
- const note=document.getElementById('ezdUnitNote');
- if(note){const clean=()=>{const revised=note.textContent.replace(/^\s*\d+\.\s*/, '');if(revised!==note.textContent)note.textContent=revised;};
-   clean();new MutationObserver(clean).observe(note,{childList:true,characterData:true});}
+ // Aukeratutako unitatea zerrendan markatuta eta ikusgai mantendu.
+ const updateSelection=()=>{
+   root.querySelectorAll('[data-ezd-unit]').forEach(button=>{
+     const isSelected=button.dataset.ezdUnit===stored;
+     button.setAttribute('aria-pressed',String(isSelected));
+     button.classList.toggle('ezd-unit-selected',isSelected);
+   });
+   if(selectedButton){
+     selectedButton.scrollIntoView({block:'nearest',inline:'nearest'});
+   }
+ };
+ updateSelection();
 })();
 </script></body></html>
