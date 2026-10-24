@@ -1662,46 +1662,88 @@ window.EZD_EMAITZAK_KONFIG=Object.freeze({
  window.addEventListener('ezd-ranking-refresh',()=>{if(!overlay.hidden)load()});
 })();
 </script><script>
-/* Hasierako 4 arloak beti ikusgai; unitateak eskuinean, aurreko motorra aldatu gabe */
+/* Aukeraketa librea: motorra ez da birkargatzen 'Hasi partida berria' sakatu arte. */
 (()=>{
- const root=document.querySelector('.ezd-landscape'),panel=document.getElementById('ezdUnitPanel');
+ const root=document.querySelector('.ezd-landscape');
+ const panel=document.getElementById('ezdUnitPanel');
  if(!root||!panel)return;
+ const key='ezd-unit-selected';
+ const boot='ezd-aukeraketa-hasi-v2';
  const details=[...root.querySelectorAll('.ezd-subject')];
  const lists=new Map(details.map(d=>[d,d.querySelector('.ezd-units')]));
- // Fitxategi guztiak eta haien klik-kudeatzaileak mantentzen dira.
+ const buttons=[...root.querySelectorAll('[data-ezd-unit]')];
  for(const list of lists.values())if(list)list.remove();
- const show=d=>{
-   details.forEach(other=>{other.open=(other===d)});
+ const start=document.getElementById('launchBtn');
+ const continueBtn=document.getElementById('continueBtn');
+ const nick=document.getElementById('ezdPlayerNick');
+ let selected=(localStorage.getItem(key)||'FK06').toUpperCase();
+ const current=typeof EZD_UNIT==='string'?EZD_UNIT:selected;
+ function show(d){
+   details.forEach(other=>{other.open=other===d});
    panel.replaceChildren();
    const list=lists.get(d);if(list)panel.appendChild(list);
    panel.scrollTop=0;
- };
- details.forEach(d=>{
-   d.querySelector('summary').addEventListener('click',event=>{
-     event.preventDefault();show(d);
-   });
- });
- // Mantendu benetan gordetako unitatearen arloa, orria birkargatzean ere.
- const stored=(localStorage.getItem('ezd-unit-selected')||'FK06').toUpperCase();
- const selectedButton=root.querySelector('[data-ezd-unit="'+stored+'"]');
- let init=details[0];
- if(selectedButton){
-   for(const [subject,list] of lists){
-     if(list&&list.contains(selectedButton)){init=subject;break;}
+ }
+ function showSelectedArea(code){
+   const button=buttons.find(b=>b.dataset.ezdUnit===code);
+   if(!button)return;
+   for(const [group,list] of lists){
+     if(list?.contains(button)){
+       if(panel.firstElementChild!==list)show(group);
+       button.scrollIntoView({block:'nearest',inline:'nearest'});
+       break;
+     }
    }
  }
- show(init);
- // Aukeratutako unitatea zerrendan markatuta eta ikusgai mantendu.
- const updateSelection=()=>{
-   root.querySelectorAll('[data-ezd-unit]').forEach(button=>{
-     const isSelected=button.dataset.ezdUnit===stored;
-     button.setAttribute('aria-pressed',String(isSelected));
-     button.classList.toggle('ezd-unit-selected',isSelected);
+ function paint(){
+   buttons.forEach(b=>{
+     const chosen=b.dataset.ezdUnit===selected;
+     b.setAttribute('aria-pressed',String(chosen));
+     b.classList.toggle('ezd-unit-selected',chosen);
    });
-   if(selectedButton){
-     selectedButton.scrollIntoView({block:'nearest',inline:'nearest'});
+ }
+ details.forEach(d=>d.querySelector('summary')?.addEventListener('click',e=>{
+   e.preventDefault();show(d);
+ }));
+ // Capture fasean gelditu aurreko bi klik-kudeatzaileak:
+ // ez birkargatu, eta nahi adina aldiz aukeratu ahal izan.
+ buttons.forEach(b=>b.addEventListener('click',e=>{
+   e.preventDefault();e.stopImmediatePropagation();
+   selected=String(b.dataset.ezdUnit||'').toUpperCase();
+   paint();
+ },true));
+ show(details[0]);
+ showSelectedArea(selected);
+ paint();
+ // Kargatutako unitatea bera bada, aurreko motorra normalean hasten da.
+ // Bestela, hautatutako kodea hasiera sakatzean soilik gorde eta birkargatu.
+ // Birkargatu ondoren, sartutako ezizena berreskuratu eta partida abiatu.
+ function startChosen(e){
+   if(selected===current)return;
+   const alias=String(nick?.value||'').trim();
+   // Balidazioa hasierako motorrekoaren bera, kode-aldaketa egin aurretik.
+   if(alias.length<2||alias.length>32||/^[=+@-]/.test(alias)||/[\x00-\x1f\x7f<>]/.test(alias))return;
+   e.preventDefault();e.stopImmediatePropagation();
+   try{
+     sessionStorage.setItem(boot,JSON.stringify({code:selected,alias,mode:e.currentTarget===continueBtn?'continue':'new'}));
+     localStorage.setItem(key,selected);
+     window.location.reload();
+   }catch(err){
+     console.error('Ezin izan da unitate berria kargatu',err);
    }
- };
- updateSelection();
+ }
+ start?.addEventListener('click',startChosen,true);
+ continueBtn?.addEventListener('click',startChosen,true);
+ let pending=null;
+ try{pending=JSON.parse(sessionStorage.getItem(boot)||'null')}catch(e){}
+ if(pending){
+   sessionStorage.removeItem(boot);
+   if(pending.code===current&&typeof pending.alias==='string'){
+     if(nick)nick.value=pending.alias;
+     const target=pending.mode==='continue'&&!continueBtn?.hidden?continueBtn:start;
+     // Utzi hasierako gainerako konfigurazioak guztiz amaitzen.
+     if(target)requestAnimationFrame(()=>target.click());
+   }
+ }
 })();
 </script></body></html>
