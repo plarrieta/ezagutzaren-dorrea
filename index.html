@@ -1718,22 +1718,25 @@ window.EZD_EMAITZAK_KONFIG=Object.freeze({
  // Kargatutako unitatea bera bada, aurreko motorra normalean hasten da.
  // Bestela, hautatutako kodea hasiera sakatzean soilik gorde eta birkargatu.
  // Birkargatu ondoren, sartutako ezizena berreskuratu eta partida abiatu.
- function startChosen(e){
+ // Dokumentuaren capture fasean: unitate zaharraren abiarazleak baino lehen.
+ // Honek bereziki konpontzen du motor modularrak stopImmediatePropagation egitea.
+ document.addEventListener('click',e=>{
+   const target=e.target?.closest?.('#launchBtn,#continueBtn');
+   if(!target)return;
+   if(target!==start && target!==continueBtn)return;
    if(selected===current)return;
    const alias=String(nick?.value||'').trim();
-   // Balidazioa hasierako motorrekoaren bera, kode-aldaketa egin aurretik.
-   if(alias.length<2||alias.length>32||/^[=+@-]/.test(alias)||/[\x00-\x1f\x7f<>]/.test(alias))return;
-   e.preventDefault();e.stopImmediatePropagation();
-   try{
-     sessionStorage.setItem(boot,JSON.stringify({code:selected,alias,mode:e.currentTarget===continueBtn?'continue':'new'}));
-     localStorage.setItem(key,selected);
-     window.location.reload();
-   }catch(err){
-     console.error('Ezin izan da unitate berria kargatu',err);
+   if(alias.length<2||alias.length>32||/^[=+@-]/.test(alias)||/[\x00-\x1f\x7f<>]/.test(alias)){
+     e.preventDefault();e.stopImmediatePropagation();
+     const warning=document.getElementById('ezdPlayerWarning');
+     if(warning){warning.hidden=false;warning.textContent='Idatzi 2-32 karaktereko izena edo ezizena.';}
+     nick?.focus();return;
    }
- }
- start?.addEventListener('click',startChosen,true);
- continueBtn?.addEventListener('click',startChosen,true);
+   e.preventDefault();e.stopImmediatePropagation();
+   sessionStorage.setItem(boot,JSON.stringify({code:selected,alias,mode:target===continueBtn?'continue':'new'}));
+   localStorage.setItem(key,selected);
+   location.reload();
+ },true);
  let pending=null;
  try{pending=JSON.parse(sessionStorage.getItem(boot)||'null')}catch(e){}
  if(pending){
